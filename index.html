@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gomoku — Classic Five-in-a-Row Strategy Game">
+  <title>Gomoku</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__brand">
+        <h1 class="header__title">Gomoku</h1>
+        <p class="header__subtitle">Classic Five-in-a-Row Strategy Game</p>
+      </div>
+      <div class="header__status card" id="status-indicator" role="status" aria-live="polite">
+        <span class="status-dot status-dot--black" id="status-dot"></span>
+        <span id="status-text">Black's Turn</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="game-area">
+        <div class="board-wrapper card">
+          <div class="board" id="board" role="grid" aria-label="Gomoku game board"></div>
+        </div>
+
+        <aside class="sidebar">
+          <div class="card control-panel">
+            <h2 class="card__title">Controls</h2>
+            <div class="control-panel__actions">
+              <button class="button button--primary" id="btn-new-game" type="button">
+                New Game
+              </button>
+              <button class="button button--secondary" id="btn-undo" type="button" disabled>
+                Undo Move
+              </button>
+            </div>
+
+            <div class="control-panel__toggle">
+              <label class="toggle" for="ai-mode">
+                <span class="toggle__label">AI Mode</span>
+                <input type="checkbox" id="ai-mode" class="toggle__input">
+                <span class="toggle__track" aria-hidden="true">
+                  <span class="toggle__thumb"></span>
+                </span>
+              </label>
+              <span class="toggle__hint" id="ai-mode-hint">Human vs Human</span>
+            </div>
+
+            <div class="control-panel__difficulty" id="difficulty-group" hidden>
+              <label class="field-label" for="ai-difficulty">Difficulty</label>
+              <select id="ai-difficulty" class="select" aria-label="AI difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card score-panel">
+            <h2 class="card__title">Score</h2>
+            <div class="score-grid">
+              <div class="score-item">
+                <span class="score-item__stone stone-preview stone-preview--black"></span>
+                <span class="score-item__label" id="score-black-label">Black</span>
+                <span class="score-item__value" id="score-black">0</span>
+              </div>
+              <div class="score-item">
+                <span class="score-item__stone stone-preview stone-preview--white"></span>
+                <span class="score-item__label" id="score-white-label">White</span>
+                <span class="score-item__value" id="score-white">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card history-panel">
+            <h2 class="card__title">Move History</h2>
+            <ol class="history-list" id="move-history" aria-label="Move history">
+              <li class="history-list__empty">No moves yet</li>
+            </ol>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Press <kbd>R</kbd> to restart</p>
+    </footer>
+  </div>
+
+  <script src="js/game.js" type="module"></script>
+</body>
+</html>
