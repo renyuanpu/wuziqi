@@ -49,13 +49,43 @@
               <span class="toggle__hint" id="ai-mode-hint">Human vs Human</span>
             </div>
 
-            <div class="control-panel__difficulty" id="difficulty-group" hidden>
-              <label class="field-label" for="ai-difficulty">Difficulty</label>
-              <select id="ai-difficulty" class="select" aria-label="AI difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-              </select>
+            <div class="control-panel__ai-options" id="ai-options" hidden>
+              <div class="control-panel__field">
+                <span class="field-label" id="play-as-label">Play as</span>
+                <div class="color-picker" role="radiogroup" aria-labelledby="play-as-label">
+                  <button
+                    type="button"
+                    class="color-picker__option is-active"
+                    id="play-as-black"
+                    role="radio"
+                    aria-checked="true"
+                    data-color="black"
+                  >
+                    <span class="stone-preview stone-preview--black"></span>
+                    Black
+                  </button>
+                  <button
+                    type="button"
+                    class="color-picker__option"
+                    id="play-as-white"
+                    role="radio"
+                    aria-checked="false"
+                    data-color="white"
+                  >
+                    <span class="stone-preview stone-preview--white"></span>
+                    White
+                  </button>
+                </div>
+              </div>
+
+              <div class="control-panel__field">
+                <label class="field-label" for="ai-difficulty">Difficulty</label>
+                <select id="ai-difficulty" class="select" aria-label="AI difficulty">
+                  <option value="easy">Easy</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
             </div>
           </div>
 

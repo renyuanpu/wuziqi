@@ -13,10 +13,6 @@ import {
 } from './core.js';
 import { AIPlayer, DIFFICULTY } from './ai.js';
 
-/** Human is always Black; AI plays White when AI mode is on. */
-const AI_PLAYER = WHITE;
-const HUMAN_PLAYER = BLACK;
-
 /* ==========================================================================
    GameState — manages board data, turn, history, and scores
    ========================================================================== */
@@ -174,8 +170,10 @@ class UIController {
     this.btnUndo = document.getElementById('btn-undo');
     this.aiToggle = document.getElementById('ai-mode');
     this.aiHint = document.getElementById('ai-mode-hint');
-    this.difficultyGroup = document.getElementById('difficulty-group');
+    this.aiOptions = document.getElementById('ai-options');
     this.difficultySelect = document.getElementById('ai-difficulty');
+    this.playAsBlack = document.getElementById('play-as-black');
+    this.playAsWhite = document.getElementById('play-as-white');
   }
 
   updateStatus(text, dotClass) {
@@ -188,23 +186,38 @@ class UIController {
     this.scoreWhite.textContent = scores[WHITE];
   }
 
-  updateScoreLabels(aiEnabled) {
-    if (aiEnabled) {
-      this.scoreBlackLabel.textContent = 'You';
-      this.scoreWhiteLabel.textContent = 'AI';
-    } else {
+  updateScoreLabels(aiEnabled, humanPlayer) {
+    if (!aiEnabled) {
       this.scoreBlackLabel.textContent = 'Black';
       this.scoreWhiteLabel.textContent = 'White';
+      return;
     }
+
+    this.scoreBlackLabel.textContent = humanPlayer === BLACK ? 'You' : 'AI';
+    this.scoreWhiteLabel.textContent = humanPlayer === WHITE ? 'You' : 'AI';
   }
 
-  updateAiControls(aiEnabled, difficulty) {
+  updateAiControls(aiEnabled, difficulty, humanPlayer) {
     this.aiToggle.checked = aiEnabled;
-    this.difficultyGroup.hidden = !aiEnabled;
+    this.aiOptions.hidden = !aiEnabled;
     this.difficultySelect.value = difficulty;
-    this.aiHint.textContent = aiEnabled
-      ? `You (Black) vs AI · ${this._difficultyLabel(difficulty)}`
-      : 'Human vs Human';
+    this._updateColorPicker(humanPlayer);
+
+    if (!aiEnabled) {
+      this.aiHint.textContent = 'Human vs Human';
+      return;
+    }
+
+    const colorName = humanPlayer === BLACK ? 'Black' : 'White';
+    this.aiHint.textContent = `You (${colorName}) vs AI · ${this._difficultyLabel(difficulty)}`;
+  }
+
+  _updateColorPicker(humanPlayer) {
+    const blackActive = humanPlayer === BLACK;
+    this.playAsBlack.classList.toggle('is-active', blackActive);
+    this.playAsWhite.classList.toggle('is-active', !blackActive);
+    this.playAsBlack.setAttribute('aria-checked', String(blackActive));
+    this.playAsWhite.setAttribute('aria-checked', String(!blackActive));
   }
 
   _difficultyLabel(difficulty) {
@@ -216,7 +229,7 @@ class UIController {
     return labels[difficulty] || 'Medium';
   }
 
-  updateHistory(history, aiEnabled) {
+  updateHistory(history, aiEnabled, aiPlayer) {
     if (history.length === 0) {
       this.moveHistory.innerHTML = '<li class="history-list__empty">No moves yet</li>';
       return;
@@ -224,7 +237,7 @@ class UIController {
 
     this.moveHistory.innerHTML = history
       .map((move, index) => {
-        const isAi = aiEnabled && move.player === AI_PLAYER;
+        const isAi = aiEnabled && move.player === aiPlayer;
         const playerName = isAi ? 'AI' : PLAYER_NAMES[move.player];
         const playerClass = move.player === BLACK ? 'black' : 'white';
         return `
@@ -254,6 +267,7 @@ class Game {
     this.ui = new UIController();
     this.ai = new AIPlayer(DIFFICULTY.MEDIUM);
     this.aiEnabled = false;
+    this.humanPlayer = BLACK;
     this.aiThinking = false;
     this.aiTimer = null;
 
@@ -266,22 +280,27 @@ class Game {
     this._refreshUI();
   }
 
+  get aiPlayer() {
+    return this.humanPlayer === BLACK ? WHITE : BLACK;
+  }
+
   _bindEvents() {
     this.ui.btnNewGame.addEventListener('click', () => this.newGame());
     this.ui.btnUndo.addEventListener('click', () => this.undoMove());
 
     this.ui.aiToggle.addEventListener('change', () => {
       this.aiEnabled = this.ui.aiToggle.checked;
-      this.ui.updateAiControls(this.aiEnabled, this.ai.difficulty);
-      this.ui.updateScoreLabels(this.aiEnabled);
       this.newGame();
     });
 
     this.ui.difficultySelect.addEventListener('change', () => {
       this.ai.setDifficulty(this.ui.difficultySelect.value);
-      this.ui.updateAiControls(this.aiEnabled, this.ai.difficulty);
       if (this.aiEnabled) this.newGame();
+      else this._refreshUI();
     });
+
+    this.ui.playAsBlack.addEventListener('click', () => this._setHumanColor(BLACK));
+    this.ui.playAsWhite.addEventListener('click', () => this._setHumanColor(WHITE));
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R') {
@@ -293,17 +312,22 @@ class Game {
     });
   }
 
+  _setHumanColor(color) {
+    if (!this.aiEnabled || this.humanPlayer === color) return;
+    this.humanPlayer = color;
+    this.newGame();
+  }
+
   handleMove(row, col) {
     if (this.state.gameOver || this.aiThinking) return;
 
-    // In AI mode, only allow human (Black) to click
-    if (this.aiEnabled && this.state.currentPlayer !== HUMAN_PLAYER) return;
+    if (this.aiEnabled && this.state.currentPlayer !== this.humanPlayer) return;
 
     if (!this._applyMove(row, col)) return;
 
     if (this.state.gameOver) return;
 
-    if (this.aiEnabled && this.state.currentPlayer === AI_PLAYER) {
+    if (this.aiEnabled && this.state.currentPlayer === this.aiPlayer) {
       this._scheduleAiMove();
     }
   }
@@ -338,7 +362,10 @@ class Game {
     this.aiThinking = true;
     this.board.setDisabled(true);
     this.ui.setUndoEnabled(false);
-    this.ui.updateStatus('AI is thinking…', 'white');
+    this.ui.updateStatus(
+      'AI is thinking…',
+      this.aiPlayer === BLACK ? 'black' : 'white'
+    );
 
     this.aiTimer = setTimeout(() => {
       this.aiTimer = null;
@@ -354,7 +381,7 @@ class Game {
       return;
     }
 
-    const move = this.ai.getMove(this.state.boardData, AI_PLAYER);
+    const move = this.ai.getMove(this.state.boardData, this.aiPlayer);
     this.aiThinking = false;
 
     if (!move || !this._applyMove(move.row, move.col)) {
@@ -388,13 +415,22 @@ class Game {
     if (undone === 0) return;
 
     // Ensure it's the human's turn after undo in AI mode
-    if (this.aiEnabled && this.state.currentPlayer !== HUMAN_PLAYER) {
+    if (this.aiEnabled && this.state.currentPlayer !== this.humanPlayer) {
       const extra = this.state.undoMove();
       if (extra) this.board.removeStone(extra.row, extra.col);
     }
 
     this.board.setDisabled(false);
     this._refreshUI();
+
+    // Playing White: undoing the AI opening leaves an empty board on AI's turn
+    if (
+      this.aiEnabled &&
+      !this.state.gameOver &&
+      this.state.currentPlayer === this.aiPlayer
+    ) {
+      this._scheduleAiMove();
+    }
   }
 
   newGame() {
@@ -402,6 +438,11 @@ class Game {
     this.state.resetGame();
     this.board.clearBoard();
     this._refreshUI();
+
+    // If human chose White, AI (Black) opens the game
+    if (this.aiEnabled && this.state.currentPlayer === this.aiPlayer) {
+      this._scheduleAiMove();
+    }
   }
 
   _endGame(winner) {
@@ -413,7 +454,7 @@ class Game {
       this.state.incrementScore(winner);
       let label = `${PLAYER_NAMES[winner]} Wins!`;
       if (this.aiEnabled) {
-        label = winner === HUMAN_PLAYER ? 'You Win!' : 'AI Wins!';
+        label = winner === this.humanPlayer ? 'You Win!' : 'AI Wins!';
       }
       this.ui.updateStatus(label, winner === BLACK ? 'black' : 'white');
     } else {
@@ -422,27 +463,27 @@ class Game {
 
     this.board.setDisabled(true);
     this.ui.updateScores(this.state.scores);
-    this.ui.updateHistory(this.state.moveHistory, this.aiEnabled);
-    this.ui.setUndoEnabled(this.state.moveHistory.length > 0);
+    this.ui.updateHistory(this.state.moveHistory, this.aiEnabled, this.aiPlayer);
+    this.ui.setUndoEnabled(this._canUndo());
   }
 
   _refreshUI() {
     const { currentPlayer, gameOver, moveHistory, scores } = this.state;
 
     this.ui.updateScores(scores);
-    this.ui.updateScoreLabels(this.aiEnabled);
-    this.ui.updateAiControls(this.aiEnabled, this.ai.difficulty);
-    this.ui.updateHistory(moveHistory, this.aiEnabled);
+    this.ui.updateScoreLabels(this.aiEnabled, this.humanPlayer);
+    this.ui.updateAiControls(this.aiEnabled, this.ai.difficulty, this.humanPlayer);
+    this.ui.updateHistory(moveHistory, this.aiEnabled, this.aiPlayer);
 
     if (gameOver || this.aiThinking) {
-      this.ui.setUndoEnabled(!this.aiThinking && moveHistory.length > 0);
+      this.ui.setUndoEnabled(!this.aiThinking && this._canUndo());
       return;
     }
 
     let statusText = `${PLAYER_NAMES[currentPlayer]}'s Turn`;
     if (this.aiEnabled) {
       statusText =
-        currentPlayer === HUMAN_PLAYER ? 'Your Turn' : 'AI is thinking…';
+        currentPlayer === this.humanPlayer ? 'Your Turn' : 'AI is thinking…';
     }
 
     this.ui.updateStatus(
@@ -450,8 +491,15 @@ class Game {
       currentPlayer === BLACK ? 'black' : 'white'
     );
 
-    this.ui.setUndoEnabled(moveHistory.length > 0);
+    this.ui.setUndoEnabled(this._canUndo());
     this.board.setDisabled(false);
+  }
+
+  /** Undo is available once the human has placed at least one stone. */
+  _canUndo() {
+    if (this.state.moveHistory.length === 0) return false;
+    if (!this.aiEnabled) return true;
+    return this.state.moveHistory.some((move) => move.player === this.humanPlayer);
   }
 }
 
