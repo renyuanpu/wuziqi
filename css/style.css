@@ -178,6 +178,10 @@ kbd {
   background-color: var(--color-accent);
 }
 
+.status-dot--warning {
+  background-color: #a67c52;
+}
+
 /* ==========================================================================
    Card Component
    ========================================================================== */
@@ -218,10 +222,64 @@ kbd {
    ========================================================================== */
 
 .board-wrapper {
+  position: relative;
   padding: var(--space-lg);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-md);
+  transform: translateX(-50%) translateY(6px);
+  z-index: 10;
+  max-width: calc(100% - 2rem);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px var(--color-shadow-strong);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast[hidden] {
+  display: block;
+  opacity: 0;
+}
+
+.cell--forbidden::before {
+  background-color: rgba(166, 124, 82, 0.28) !important;
+}
+
+.cell--forbidden {
+  animation: cellShake 320ms ease;
+}
+
+@keyframes cellShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
 }
 
 .board {
@@ -416,6 +474,12 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+.control-panel__toggle + .control-panel__toggle {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
 }
 
 .toggle {

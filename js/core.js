@@ -25,15 +25,24 @@ export class WinChecker {
   /**
    * Check if placing a stone at (row, col) creates a winning line.
    * Only scans outward from the last move in 4 directions — O(1) per move.
+   *
+   * @param {{ forbidBlackOverline?: boolean }} [options]
+   *        When true, Black overlines (6+) do not count as a win.
    */
-  static checkWinner(board, row, col, player) {
+  static checkWinner(board, row, col, player, options = {}) {
+    const { forbidBlackOverline = false } = options;
+
     for (const [dr, dc] of DIRECTIONS) {
       let count = 1;
 
       count += this._countInDirection(board, row, col, dr, dc, player);
       count += this._countInDirection(board, row, col, -dr, -dc, player);
 
-      if (count >= WIN_LENGTH) return true;
+      if (count === WIN_LENGTH) return true;
+      if (count > WIN_LENGTH) {
+        if (forbidBlackOverline && player === BLACK) continue;
+        return true;
+      }
     }
     return false;
   }

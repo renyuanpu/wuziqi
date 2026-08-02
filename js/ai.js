@@ -10,6 +10,7 @@ import {
   DIRECTIONS,
   WinChecker,
 } from './core.js';
+import { ForbiddenChecker } from './forbidden.js';
 
 export const DIFFICULTY = {
   EASY: 'easy',
@@ -53,10 +54,15 @@ const DIFFICULTY_CONFIG = {
 export class AIPlayer {
   constructor(difficulty = DIFFICULTY.MEDIUM) {
     this.difficulty = difficulty;
+    this.forbiddenMoves = false;
   }
 
   setDifficulty(difficulty) {
     this.difficulty = difficulty;
+  }
+
+  setForbiddenMoves(enabled) {
+    this.forbiddenMoves = enabled;
   }
 
   getThinkDelay() {
@@ -69,7 +75,21 @@ export class AIPlayer {
    */
   getMove(board, aiPlayer) {
     const human = aiPlayer === BLACK ? WHITE : BLACK;
-    const candidates = this._getCandidates(board);
+    let candidates = this._getCandidates(board).filter((move) =>
+      this._isLegal(board, move.row, move.col, aiPlayer)
+    );
+
+    if (candidates.length === 0) {
+      candidates = this._getCandidates(board, 3).filter((move) =>
+        this._isLegal(board, move.row, move.col, aiPlayer)
+      );
+    }
+
+    if (candidates.length === 0) {
+      candidates = this._allEmptyCells(board).filter((move) =>
+        this._isLegal(board, move.row, move.col, aiPlayer)
+      );
+    }
 
     if (candidates.length === 0) {
       return { row: Math.floor(BOARD_SIZE / 2), col: Math.floor(BOARD_SIZE / 2) };
@@ -106,6 +126,14 @@ export class AIPlayer {
     }
 
     return this._hardPick(board, candidates, aiPlayer, human);
+  }
+
+  _isLegal(board, row, col, player) {
+    if (board[row][col] !== EMPTY) return false;
+    if (player === BLACK && this.forbiddenMoves) {
+      return !ForbiddenChecker.isForbidden(board, row, col);
+    }
+    return true;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -266,8 +294,13 @@ export class AIPlayer {
 
   _wouldWin(board, row, col, player) {
     if (board[row][col] !== EMPTY) return false;
+    if (player === BLACK && this.forbiddenMoves && ForbiddenChecker.isForbidden(board, row, col)) {
+      return false;
+    }
     board[row][col] = player;
-    const won = WinChecker.checkWinner(board, row, col, player);
+    const won = WinChecker.checkWinner(board, row, col, player, {
+      forbidBlackOverline: this.forbiddenMoves,
+    });
     board[row][col] = EMPTY;
     return won;
   }
@@ -304,6 +337,16 @@ export class AIPlayer {
     }
 
     return candidates;
+  }
+
+  _allEmptyCells(board) {
+    const cells = [];
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (board[row][col] === EMPTY) cells.push({ row, col });
+      }
+    }
+    return cells;
   }
 
   _pickRandom(list) {

@@ -12,6 +12,7 @@ import {
   WinChecker,
 } from './core.js';
 import { AIPlayer, DIFFICULTY } from './ai.js';
+import { ForbiddenChecker } from './forbidden.js';
 
 /* ==========================================================================
    GameState — manages board data, turn, history, and scores
@@ -151,6 +152,14 @@ class GameBoard {
       }
     });
   }
+
+  flashForbidden(row, col) {
+    const cell = this.getCell(row, col);
+    cell.classList.remove('cell--forbidden');
+    void cell.offsetWidth;
+    cell.classList.add('cell--forbidden');
+    setTimeout(() => cell.classList.remove('cell--forbidden'), 400);
+  }
 }
 
 /* ==========================================================================
@@ -174,11 +183,43 @@ class UIController {
     this.difficultySelect = document.getElementById('ai-difficulty');
     this.playAsBlack = document.getElementById('play-as-black');
     this.playAsWhite = document.getElementById('play-as-white');
+    this.forbiddenToggle = document.getElementById('forbidden-moves');
+    this.forbiddenHint = document.getElementById('forbidden-hint');
+    this.toast = document.getElementById('toast');
+    this._toastTimer = null;
   }
 
   updateStatus(text, dotClass) {
     this.statusText.textContent = text;
     this.statusDot.className = `status-dot status-dot--${dotClass}`;
+  }
+
+  showToast(message) {
+    if (this._toastTimer) {
+      clearTimeout(this._toastTimer);
+      this._toastTimer = null;
+    }
+
+    this.toast.hidden = false;
+    this.toast.textContent = message;
+    // Force reflow so the enter transition always plays
+    void this.toast.offsetWidth;
+    this.toast.classList.add('is-visible');
+
+    this._toastTimer = setTimeout(() => {
+      this.toast.classList.remove('is-visible');
+      this._toastTimer = setTimeout(() => {
+        this.toast.hidden = true;
+        this._toastTimer = null;
+      }, 250);
+    }, 2200);
+  }
+
+  updateForbiddenControls(enabled) {
+    this.forbiddenToggle.checked = enabled;
+    this.forbiddenHint.textContent = enabled
+      ? 'On · 三三 / 四四 / 长连'
+      : 'Off · Free-style Gomoku';
   }
 
   updateScores(scores) {
@@ -267,6 +308,7 @@ class Game {
     this.ui = new UIController();
     this.ai = new AIPlayer(DIFFICULTY.MEDIUM);
     this.aiEnabled = false;
+    this.forbiddenMoves = false;
     this.humanPlayer = BLACK;
     this.aiThinking = false;
     this.aiTimer = null;
@@ -291,6 +333,12 @@ class Game {
     this.ui.aiToggle.addEventListener('change', () => {
       this.aiEnabled = this.ui.aiToggle.checked;
       this.newGame();
+    });
+
+    this.ui.forbiddenToggle.addEventListener('change', () => {
+      this.forbiddenMoves = this.ui.forbiddenToggle.checked;
+      this.ai.setForbiddenMoves(this.forbiddenMoves);
+      this.ui.updateForbiddenControls(this.forbiddenMoves);
     });
 
     this.ui.difficultySelect.addEventListener('change', () => {
@@ -323,6 +371,20 @@ class Game {
 
     if (this.aiEnabled && this.state.currentPlayer !== this.humanPlayer) return;
 
+    if (this.state.boardData[row][col] !== EMPTY) return;
+
+    // Black forbidden moves: reject placement and ask for another cell
+    if (
+      this.forbiddenMoves &&
+      this.state.currentPlayer === BLACK
+    ) {
+      const forbidden = ForbiddenChecker.check(this.state.boardData, row, col);
+      if (forbidden) {
+        this._rejectForbidden(row, col, forbidden.label);
+        return;
+      }
+    }
+
     if (!this._applyMove(row, col)) return;
 
     if (this.state.gameOver) return;
@@ -330,6 +392,25 @@ class Game {
     if (this.aiEnabled && this.state.currentPlayer === this.aiPlayer) {
       this._scheduleAiMove();
     }
+  }
+
+  _rejectForbidden(row, col, label) {
+    this.board.flashForbidden(row, col);
+    this.ui.showToast(`不能下这儿（${label}禁手），请换个位置`);
+    this.ui.updateStatus(`禁手：${label} · 请重下`, 'warning');
+
+    // Restore the normal turn indicator after the toast
+    setTimeout(() => {
+      if (this.state.gameOver || this.aiThinking) return;
+      if (this.state.currentPlayer !== BLACK) return;
+
+      let statusText = "Black's Turn";
+      if (this.aiEnabled) {
+        statusText =
+          this.humanPlayer === BLACK ? 'Your Turn' : 'AI is thinking…';
+      }
+      this.ui.updateStatus(statusText, 'black');
+    }, 2200);
   }
 
   /**
@@ -342,7 +423,11 @@ class Game {
 
     this.board.placeStone(row, col, player);
 
-    if (WinChecker.checkWinner(this.state.boardData, row, col, player)) {
+    if (
+      WinChecker.checkWinner(this.state.boardData, row, col, player, {
+        forbidBlackOverline: this.forbiddenMoves,
+      })
+    ) {
       this._endGame(player);
       return true;
     }
@@ -473,6 +558,7 @@ class Game {
     this.ui.updateScores(scores);
     this.ui.updateScoreLabels(this.aiEnabled, this.humanPlayer);
     this.ui.updateAiControls(this.aiEnabled, this.ai.difficulty, this.humanPlayer);
+    this.ui.updateForbiddenControls(this.forbiddenMoves);
     this.ui.updateHistory(moveHistory, this.aiEnabled, this.aiPlayer);
 
     if (gameOver || this.aiThinking) {

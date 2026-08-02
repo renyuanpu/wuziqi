@@ -24,6 +24,7 @@
       <section class="game-area">
         <div class="board-wrapper card">
           <div class="board" id="board" role="grid" aria-label="Gomoku game board"></div>
+          <div class="toast" id="toast" role="alert" aria-live="assertive" hidden></div>
         </div>
 
         <aside class="sidebar">
@@ -47,6 +48,17 @@
                 </span>
               </label>
               <span class="toggle__hint" id="ai-mode-hint">Human vs Human</span>
+            </div>
+
+            <div class="control-panel__toggle">
+              <label class="toggle" for="forbidden-moves">
+                <span class="toggle__label">Black Forbidden Moves</span>
+                <input type="checkbox" id="forbidden-moves" class="toggle__input">
+                <span class="toggle__track" aria-hidden="true">
+                  <span class="toggle__thumb"></span>
+                </span>
+              </label>
+              <span class="toggle__hint" id="forbidden-hint">Off · Free-style Gomoku</span>
             </div>
 
             <div class="control-panel__ai-options" id="ai-options" hidden>
