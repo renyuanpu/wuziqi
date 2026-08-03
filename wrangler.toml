@@ -1,0 +1,17 @@
+name = "gomoku"
+main = "worker/index.js"
+compatibility_date = "2025-04-07"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/ws"]
+
+[durable_objects]
+bindings = [
+  { name = "GAME_ROOM", class_name = "GameRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoom"]

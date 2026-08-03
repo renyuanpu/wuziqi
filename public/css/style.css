@@ -320,6 +320,11 @@ kbd {
   background-color: rgba(0, 0, 0, 0.06);
 }
 
+.cell--hint::before {
+  background-color: rgba(196, 181, 160, 0.5) !important;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
 .cell--disabled {
   cursor: default;
 }
@@ -476,10 +481,113 @@ kbd {
   gap: var(--space-xs);
 }
 
-.control-panel__toggle + .control-panel__toggle {
+.control-panel__toggle + .control-panel__toggle,
+.control-panel__toggle + .control-panel__online,
+.control-panel__online + .control-panel__toggle {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border);
+}
+
+.control-panel__online {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.control-panel__online[hidden] {
+  display: none;
+}
+
+.control-panel__actions--online {
+  margin-bottom: 0;
+}
+
+.room-code-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.room-code-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.room-code-row .button {
+  flex-shrink: 0;
+}
+
+.text-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.text-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.online-status {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.consent-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  background: rgba(250, 249, 247, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.consent-dialog[hidden] {
+  display: none;
+}
+
+.consent-dialog__card {
+  width: min(100%, 280px);
+  padding: var(--space-lg);
+}
+
+.consent-dialog__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-sm);
+}
+
+.consent-dialog__message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.consent-dialog__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.consent-dialog__actions .button {
+  flex: 1;
 }
 
 .toggle {

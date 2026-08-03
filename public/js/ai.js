@@ -71,30 +71,33 @@ export class AIPlayer {
   }
 
   /**
+   * Suggest a move for hints (deterministic, no randomness).
+   */
+  getHintMove(board, player) {
+    const candidates = this._legalCandidates(board, player);
+    if (candidates.length === 0) return null;
+
+    const human = player === BLACK ? WHITE : BLACK;
+    const ranked = candidates
+      .map((move) => ({
+        ...move,
+        score: this._evaluateMove(board, move.row, move.col, player, human, 1),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    return this._pickStable(ranked.slice(0, 3));
+  }
+
+  /**
    * Choose the next AI move. Returns { row, col }.
    */
   getMove(board, aiPlayer) {
-    const human = aiPlayer === BLACK ? WHITE : BLACK;
-    let candidates = this._getCandidates(board).filter((move) =>
-      this._isLegal(board, move.row, move.col, aiPlayer)
-    );
-
-    if (candidates.length === 0) {
-      candidates = this._getCandidates(board, 3).filter((move) =>
-        this._isLegal(board, move.row, move.col, aiPlayer)
-      );
-    }
-
-    if (candidates.length === 0) {
-      candidates = this._allEmptyCells(board).filter((move) =>
-        this._isLegal(board, move.row, move.col, aiPlayer)
-      );
-    }
-
+    const candidates = this._legalCandidates(board, aiPlayer);
     if (candidates.length === 0) {
       return { row: Math.floor(BOARD_SIZE / 2), col: Math.floor(BOARD_SIZE / 2) };
     }
 
+    const human = aiPlayer === BLACK ? WHITE : BLACK;
     const config = DIFFICULTY_CONFIG[this.difficulty];
 
     // Immediate win
@@ -126,6 +129,26 @@ export class AIPlayer {
     }
 
     return this._hardPick(board, candidates, aiPlayer, human);
+  }
+
+  _legalCandidates(board, player) {
+    let candidates = this._getCandidates(board).filter((move) =>
+      this._isLegal(board, move.row, move.col, player)
+    );
+
+    if (candidates.length === 0) {
+      candidates = this._getCandidates(board, 3).filter((move) =>
+        this._isLegal(board, move.row, move.col, player)
+      );
+    }
+
+    if (candidates.length === 0) {
+      candidates = this._allEmptyCells(board).filter((move) =>
+        this._isLegal(board, move.row, move.col, player)
+      );
+    }
+
+    return candidates;
   }
 
   _isLegal(board, row, col, player) {
@@ -351,5 +374,18 @@ export class AIPlayer {
 
   _pickRandom(list) {
     return list[Math.floor(Math.random() * list.length)];
+  }
+
+  /** Prefer center-most cell for stable hints when scores tie. */
+  _pickStable(list) {
+    if (list.length === 0) return null;
+    const mid = (BOARD_SIZE - 1) / 2;
+    return [...list].sort((a, b) => {
+      const da = Math.abs(a.row - mid) + Math.abs(a.col - mid);
+      const db = Math.abs(b.row - mid) + Math.abs(b.col - mid);
+      if (da !== db) return da - db;
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    })[0];
   }
 }

@@ -25,6 +25,17 @@
         <div class="board-wrapper card">
           <div class="board" id="board" role="grid" aria-label="Gomoku game board"></div>
           <div class="toast" id="toast" role="alert" aria-live="assertive" hidden></div>
+
+          <div class="consent-dialog" id="consent-dialog" hidden>
+            <div class="consent-dialog__card card" role="alertdialog" aria-modal="true" aria-labelledby="consent-title">
+              <h3 class="consent-dialog__title" id="consent-title">Request</h3>
+              <p class="consent-dialog__message" id="consent-message"></p>
+              <div class="consent-dialog__actions">
+                <button class="button button--primary" id="btn-consent-accept" type="button">Accept</button>
+                <button class="button button--secondary" id="btn-consent-decline" type="button">Decline</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <aside class="sidebar">
@@ -37,6 +48,50 @@
               <button class="button button--secondary" id="btn-undo" type="button" disabled>
                 Undo Move
               </button>
+              <button class="button button--secondary" id="btn-hint" type="button">
+                Hint
+              </button>
+            </div>
+
+            <div class="control-panel__toggle">
+              <label class="toggle" for="online-mode">
+                <span class="toggle__label">Online Mode</span>
+                <input type="checkbox" id="online-mode" class="toggle__input">
+                <span class="toggle__track" aria-hidden="true">
+                  <span class="toggle__thumb"></span>
+                </span>
+              </label>
+              <span class="toggle__hint" id="online-hint">Off · Local play</span>
+            </div>
+
+            <div class="control-panel__online" id="online-options" hidden>
+              <div class="control-panel__field">
+                <label class="field-label" for="room-code">Room Code</label>
+                <div class="room-code-row">
+                  <input
+                    type="text"
+                    id="room-code"
+                    class="text-input"
+                    maxlength="6"
+                    placeholder="ABC123"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="Room code"
+                  >
+                  <button class="button button--secondary" id="btn-generate-code" type="button">
+                    Generate
+                  </button>
+                </div>
+              </div>
+              <div class="control-panel__actions control-panel__actions--online">
+                <button class="button button--primary" id="btn-join-room" type="button">
+                  Join Room
+                </button>
+                <button class="button button--secondary" id="btn-leave-room" type="button" disabled>
+                  Leave
+                </button>
+              </div>
+              <p class="online-status" id="online-status">Enter the same code as your opponent</p>
             </div>
 
             <div class="control-panel__toggle">
@@ -128,7 +183,7 @@
     </main>
 
     <footer class="footer">
-      <p>Press <kbd>R</kbd> to restart</p>
+      <p>Press <kbd>R</kbd> to restart · <kbd>H</kbd> for hint</p>
     </footer>
   </div>
 
